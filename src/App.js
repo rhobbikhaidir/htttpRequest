@@ -3,40 +3,58 @@ import React, { useState } from "react";
 import MoviesList from "./components/MoviesList";
 import "./App.css";
 
-// https://swapi.dev/api/films/
-
 function App() {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const fetchMoviesHandler = async () => {
     setLoading(true);
-    const response = await fetch("https://swapi.dev/api/films/");
+    setError(null);
 
-    const data = await response.json();
-    const transformedMovies = data.results.map((res) => {
-      return {
-        id: res.episode_id,
-        title: res.title,
-        openingText: res.opening_crawl,
-        releaseDate: res.release_date,
-      };
-    });
+    try {
+      const response = await fetch("https://swapi.dev/api/films/");
 
-    setMovies(transformedMovies);
+      if (!response.ok) {
+        throw new Error("Something went wrong!");
+      }
+
+      const data = await response.json();
+      const transformedMovies = data.results.map((res) => {
+        return {
+          id: res.episode_id,
+          title: res.title,
+          openingText: res.opening_crawl,
+          releaseDate: res.release_date,
+        };
+      });
+
+      setMovies(transformedMovies);
+    } catch (err) {
+      console.log(err);
+      setError(err.message);
+    }
     setLoading(false);
   };
 
+  let content = <p>Found no Movies</p>;
+
+  if (movies.length > 0) {
+    content = <MoviesList movies={movies} />;
+  }
+  if (error) {
+    content = <p>{error}</p>;
+  }
+
+  if (loading) {
+    content = <p>Loading...</p>;
+  }
   return (
     <React.Fragment>
       <section>
         <button onClick={fetchMoviesHandler}>Fetch Movies</button>
       </section>
-      <section>
-        {!loading && movies.length > 0 && <MoviesList movies={movies} />}
-        {loading && <p>Loading...</p>}
-        {!loading && movies.length === 0 && <p>Found no Movies</p>}
-      </section>
+      <section>{content}</section>
     </React.Fragment>
   );
 }
